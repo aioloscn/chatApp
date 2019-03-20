@@ -68,6 +68,11 @@
 		
 		mui.plusReady(function() {
 			
+			// 禁止返回到上一页面
+			mui.back = function() {
+				return false;
+			}
+			
 			// 获取当前的webview对象
 			var indexWebview = plus.webview.currentWebview();
 			
