@@ -3,11 +3,11 @@ window.app = {
 	/**
 	 * 后端服务发布的url地址
 	 */
-	serverUrl: 'http://172.18.3.11:8080',
+	serverUrl: 'http://192.168.3.255:8080',
 	/**
 	 * 图片服务器的url地址
 	 */
-	imgServerUrl: '',
+	imgServerUrl: 'http://188.131.240.181:88/aiolos/',
 	/**
 	 * 判断字符串是否为空
 	 * true：不为空
@@ -38,5 +38,12 @@ window.app = {
 	setUserGlobalInfo: function(user) {
 		var userInfoStr = JSON.stringify(user);
 		plus.storage.setItem("userInfo", userInfoStr);
-	}
+	},
+	
+	/**
+	 * 登出后，移除用户全局对象
+	 */
+	userLogout: function() {
+		plus.storage.removeItem("userInfo");
+	},
 }

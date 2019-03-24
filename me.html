@@ -56,7 +56,7 @@
 			<br />
 			<ul class="mui-table-view">
 				<li class="mui-table-view-cell mui-media" style="text-align: center;">
-					<a href="javascript:;">
+					<a id="link_logout" href="javascript:;">
 						<div class="mui-media-body">
 						    退出登录
 						</div>
@@ -82,6 +82,18 @@
 				var link_myface = document.getElementById("link_myface");
 				link_myface.addEventListener("tap", function() {
 					mui.openWindow("myface.html", "myface.html");
+				});
+				
+				// 添加自定义事件,刷新头像
+				window.addEventListener("refresh", function() {
+					refreshUserInfo();
+				});
+				
+				// 用户退出
+				var link_logout = document.getElementById("link_logout");
+				link_logout.addEventListener("tap", function(){
+					app.userLogout();
+					mui.openWindow("login.html", "login.html");
 				});
 			});
 			

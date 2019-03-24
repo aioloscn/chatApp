@@ -48,16 +48,12 @@
 			
 			mui.plusReady(function() {
 				
-				var user = app.getUserGlobalInfo();
-				var img_myface = document.getElementById("img_myface");
+				refreshFace();
 				
-				if (user != null) {
-					
-					var faceImage = user.faceImage;
-					if (app.isNotNull(faceImage)) {
-						img_myface.src = app.imgServerUrl + faceImage;
-					}
-				}
+				// 添加自定义事件,刷新头像
+				window.addEventListener("refresh", function() {
+					refreshFace();
+				});
 				
 				// 获取手机端可见屏幕的宽度
 				var imgWidth = document.body.clientWidth;
@@ -85,6 +81,20 @@
 				link_savePhoto.addEventListener("tap", function() {
 					
 				});
+				
+				function refreshFace() {
+					
+					var user = app.getUserGlobalInfo();
+					var img_myface = document.getElementById("img_myface");
+					
+					if (user != null) {
+						
+						var faceImage = user.faceImageBig;
+						if (app.isNotNull(faceImage)) {
+							img_myface.src = app.imgServerUrl + faceImage;
+						}
+					}
+				}
 			});
 		</script>
 	</body>
