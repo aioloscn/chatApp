@@ -3,7 +3,7 @@ window.app = {
 	/**
 	 * 后端服务发布的url地址
 	 */
-	serverUrl: 'http://192.168.3.255:8080',
+	serverUrl: 'http://www.aiolosxhx.com/chat',
 	/**
 	 * 图片服务器的url地址
 	 */

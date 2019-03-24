@@ -120,10 +120,9 @@
 							password: txt_password.value,
 							cid: cid
 						},
-						dataType: 'text',//服务器返回json格式数据
+						dataType: 'json',//服务器返回json格式数据
 						type: 'post',//HTTP请求类型
 						timeout: 10000,//超时时间设置为10秒
-						processData: false,
 						headers: {'Content-Type':'application/x-www-form-urlencoded'},	              
 						success: function(data) {
 							//服务器返回响应，根据响应结果，分析是否登录成功
@@ -146,6 +145,7 @@
 						error:function(xhr,type,errorThrown){
 							//异常处理；
 							console.log(type);
+							console.log(errorThrown)
 						}
 					});
 					
