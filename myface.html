@@ -106,21 +106,21 @@
 					);
 					dtast.start();	// 启动下载任务
 				});
+			});
+			
+			function refreshFace() {
 				
-				function refreshFace() {
+				var user = app.getUserGlobalInfo();
+				var img_myface = document.getElementById("img_myface");
+				
+				if (user != null) {
 					
-					var user = app.getUserGlobalInfo();
-					var img_myface = document.getElementById("img_myface");
-					
-					if (user != null) {
-						
-						var faceImage = user.faceImageBig;
-						if (app.isNotNull(faceImage)) {
-							img_myface.src = app.imgServerUrl + faceImage;
-						}
+					var faceImage = user.faceImageBig;
+					if (app.isNotNull(faceImage)) {
+						img_myface.src = app.imgServerUrl + faceImage;
 					}
 				}
-			});
+			}
 		</script>
 	</body>
 
