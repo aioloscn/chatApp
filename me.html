@@ -42,7 +42,7 @@
 					</a>
 				</li>
 				<li class="mui-table-view-cell mui-media">
-					<a href="javascript:;">
+					<a id="link_my_qrcode" href="javascript:;">
 						<span class="mui-pull-right mui-icon mui-icon-arrowright"
 							style="color: lightgray;margin-left: 3px;"></span>
 						<img class="mui-media-object mui-pull-right" src="image/qrcode.png"
@@ -90,6 +90,12 @@
 					mui.openWindow("mynickname.html", "mynickname.html");
 				});
 				
+				// 页面跳转到我的二维码
+				var link_my_qrcode = document.getElementById("link_my_qrcode");
+				link_my_qrcode.addEventListener("tap", function() {
+					mui.openWindow("myqrcode.html", "myqrcode.html");
+				});
+				
 				// 添加自定义事件,刷新头像
 				window.addEventListener("refresh", function() {
 					refreshUserInfo();
@@ -111,14 +117,14 @@
 					var nickname = user.nickname;
 					var username = user.username;
 					
-					var span_nickname = ducument.getElementById("span_nickname");
-					var span_username = ducument.getElementById("span_username");
+					var span_nickname = document.getElementById("span_nickname");
+					var span_username = document.getElementById("span_username");
 					
 					span_nickname.innerHTML = nickname;
 					span_username.innerHTML = username;
 					
 					if (app.isNotNull(faceImage)) {
-						var img_my_face = ducument.getElementById("img_my_face");
+						var img_my_face = document.getElementById("img_my_face");
 						img_my_face.src = app.imgServerUrl + faceImage;
 					}
 				}
