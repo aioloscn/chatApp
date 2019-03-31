@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="css/mui.css" rel="stylesheet" />
+		<link href="css/header.css" rel="stylesheet" />
+	</head>
+	
+	<style>
+		#scanComponent {
+			width: 100%;
+			top: 44px;
+			bottom: 0px;
+			background: black;
+			text-align: center;
+			position: absolute;
+		}
+	</style>
+
+	<body>
+		
+		<header class="mui-bar mui-bar-nav title" style="position: fixed;">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left title-color"></a>
+			<h1 class="mui-title title-color">扫一扫</h1>
+		</header>
+		
+		<div id="scanComponent"></div>
+		
+		<script src="js/mui.js"></script>
+		<script src="js/app.js"></script>
+		<script type="text/javascript">
+			mui.init();
+			
+			mui.plusReady(function() {
+				
+				setTimeout('startScan()', '500');
+			});
+			
+			var scan = null;
+			function startScan() {
+				
+				var styles = {
+					frameColor: '#0BC2FE',
+					scanbarColor: '#0BC2FE',
+					background: ''
+				}
+				
+				scan = new plus.barcode.Barcode('scanComponent', null, styles);
+				scan.onmarked = onmarked;
+				scan.start();
+			}
+			
+			function onmarked( type, result ) {
+				var text = '未知: ';
+				switch(type){
+					case plus.barcode.QR:
+					text = 'QR: ';
+					analyisisQRCode(result);
+					break;
+					case plus.barcode.EAN13:
+					text = 'EAN13: ';
+					break;
+					case plus.barcode.EAN8:
+					text = 'EAN8: ';
+					break;
+				}
+				console.log( text + result );
+				scan.start();
+			}
+			
+			// 解析二维码搜索好友
+			function analyisisQRCode(result) {
+				
+				var content = result.split('QR:');
+				if (content.length != 2) {
+					mui.alert(result);
+				} else {
+					
+					var user = app.getUserGlobalInfo();
+					var friendUsername = content[1];
+					
+					plus.nativeUI.showWaiting("请稍后...");
+					mui.ajax(app.serverUrl + "/u/addFriendRequest", {
+						data: {
+							myUserId: user.id,
+							friendUsername: friendUsername
+						},
+						dataType:'json',//服务器返回json格式数据
+						type:'post',//HTTP请求类型
+						timeout:10000,//超时时间设置为10秒；
+						headers:{'Content-Type':'application/x-www-form-urlencoded'},	              
+						success:function(data){
+							//服务器返回响应
+							plus.nativeUI.closeWaiting();
+							
+							if (data.status == 200) {
+								
+								app.showToast("好友请求已发送...", "success");
+								
+								mui.openWindow({
+									url: "index.html",
+									id: "index.html"
+								});
+							} else {
+								app.showToast(data.msg, "error");
+							}
+						}
+					});
+				}
+			}
+		</script>
+	</body>
+
+</html>

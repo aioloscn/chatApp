@@ -4,6 +4,12 @@ window.app = {
 	 * 后端服务发布的url地址
 	 */
 	serverUrl: 'http://192.168.3.21:8080',
+	
+	/**
+	 * netty服务后端发布的url地址
+	 */
+	nettyServerUrl: 'ws://192.168.3.21:8088/ws',
+	
 	/**
 	 * 图片服务器的url地址
 	 */
@@ -46,4 +52,24 @@ window.app = {
 	userLogout: function() {
 		plus.storage.removeItem("userInfo");
 	},
+	
+	/**
+	 * 保存用户的联系人列表
+	 */
+	setContactList: function(contactList) {
+		var contactListStr = JSON.stringify(contactList);
+		plus.storage.setItem('contactList', contactListStr);
+	},
+	
+	/**
+	 * 获取本地缓存中的联系人列表
+	 */
+	getContactList: function() {
+		var contactListStr = plus.storage.getItem('contactList');
+		
+		if (!this.isNotNull(contactListStr))
+			return [];
+			
+		return JSON.parse(contactListStr);
+	}
 }

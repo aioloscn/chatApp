@@ -18,7 +18,7 @@
 </head>
 <body>
 	<header class="mui-bar mui-bar-nav title">
-		<h1 class="mui-title title-color">Chat</h1>
+		<h1 class="mui-title title-color" id="chat_title"></h1>
 	</header>
 	
 	<nav class="mui-bar mui-bar-tab">
@@ -44,8 +44,8 @@
 		
 		var chatArray = [
 			{
-				pageId: "chats.html",
-				pageUrl: "chats.html"
+				pageId: "chatlist.html",
+				pageUrl: "chatlist.html"
 			},
 			{
 				pageId: "contacts.html",
@@ -73,6 +73,9 @@
 				return false;
 			}
 			
+			// 对网络连接进行监听
+			netChangeSwitch();
+			
 			// 获取当前的webview对象
 			var indexWebview = plus.webview.currentWebview();
 			
@@ -98,7 +101,34 @@
 					}
 				}
 			});
+			
+			// 延时加载
+			setTimeout('initData()', '1000');
 		});
+		
+		// 监听网络状态更改
+		function netChangeSwitch() {
+			document.addEventListener('netchange', function() {
+				
+				var connectionStatus = plus.networkinfo.getCurrentType();
+				var chat_title = document.getElementById('chat_title');
+				if (connectionStatus != 0 && connectionStatus != 1) {
+					chat_title.innerHTML = '<b>CHAT</b>';
+				} else {
+					chat_title.innerHTML = '<b>CHAT(未连接)</b>';
+				}
+			});
+		}
+		
+		// 预加载
+		function initData() {
+			
+			var chatlist = plus.webview.getWebviewById('chatlist.html');
+			mui.fire(chatlist, 'refresh');
+			
+			var me = plus.webview.getWebviewById('me.html');
+			mui.fire(me, 'refresh');
+		}
 	</script>
 </body>
 </html>
