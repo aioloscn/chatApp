@@ -13,6 +13,9 @@
 		<div class="mui-content">
 			<ul class="mui-table-view" id="ul_friend_request_list" style="margin-bottom: 10px;">
 			</ul>
+			
+			<ul id="ul_chatSnapshot" class="mui-table-view">
+			</ul>
 		</div>
 		
 		<script src="js/mui.js"></script>
@@ -70,6 +73,9 @@
 						CHAT.init();
 						setTimeout('CHAT.reChat(' + msg + ')', '1000');
 					}
+					
+					// 渲染快照列表进行展示
+					loadingChatSnapshot();
 				},
 				reChat: function(msg) {
 					console,log('重新发送消息...');
@@ -77,13 +83,50 @@
 				},
 				wsopen: function() {
 					console.log('websocket连接已建立...');
+					
+					var me = app.getUserGlobalInfo();
+					
+					var chatMsg = new app.ChatMsg(me.id, null, null, null);
+					var dataContent = new app.DataContent(app.CONNECT, chatMsg, null);
+					
+					CHAT.chat(JSON.stringify(dataContent));
 				},
 				wsmessage: function(e) {
 					console.log('接收到消息，消息为：' + e.data);
 					
+					var dataContent = JSON.parse(e.data);
+					var action = dataContent.action;
+					
+					// 重新拉取好友列表
+					if (action === app.PULL_FRIEND) {
+						fetchContactList();
+						return false;
+					}
+					
+					// 正常接收消息
+					var chatMsg = JSON.parse(e.data);
+					var msg = chatMsg.msg;
+					var myId = chatMsg.receiverId;
+					var friendUserId = chatMsg.senderId;
+					
 					// 调用聊天界面webview的receiveMsg方法
-					var chatWebview = plus.webview.getWebviewById('chatting-1903319Z6K1AW000');
-					chatWebview.evalJS('receiveMsg("' + e.data + '")');
+					var chatWebview = plus.webview.getWebviewById('chatting-' + friendUserId);
+					var isRead = true;	// 设置消息的默认状态为已读
+					if (chatWebview != null) {
+						chatWebview.evalJS('receiveMsg("' + msg + '")');
+					} else {
+						isRead = false;
+					}
+					
+					// 接收到消息之后, 对消息记录进行签收
+					var dataContentSign = new app.DataContent(app.SIGNED, null, chatMsg.msgId);
+					CHAT.chat(JSON.stringify(dataContentSign));
+					
+					// 保存聊天记录到本地缓存
+					app.saveUserChatHistory(myId, friendUserId, msg, 2);
+					app.saveUserChatSnapshot(myId, friendUserId, msg, isRead);
+					// 渲染快照列表进行展示
+					loadingChatSnapshot();
 				},
 				wsclose: function() {
 					console.log('连接关闭...');
@@ -91,6 +134,54 @@
 				wserror: function() {
 					console.log('发生错误...');
 				}
+			}
+			
+			// 展示聊天快照, 渲染列表
+			function loadingChatSnapshot() {
+				var user = app.getUserGlobalInfo();
+				var chatSnapshotList = app.getUserChatSnapshot(user.id);
+				
+				var chatItemHtml = '';
+				var ul_chatSnapshot = document.getElementById('ul_chatSnapshot');
+				ul_chatSnapshot.innerHTML = '';
+				
+				for (var i = 0; i < chatSnapshotList.length; i ++) {
+					var chatItem = chatSnapshotList[i];
+					var friendId = chatItem.friendId;
+					
+					// 根据friendId从本地联系人列表的缓存中拿到相关信息
+					var friend = app.getFriendFormContactList(friendId);
+					
+					chatItemHtml = '<li class="mui-table-view-cell mui-media">' +
+										'<div class="mui-media-body">' +
+											'<img class="mui-media-object mui-pull-left" src="' + app.imgServerUrl + friend.friendFaceImage + '"/>' +
+												friend.friendNickname
+											'<p class="mui-ellipsis">' + chatItem.msg + '</p>' +
+										'</div>' +
+									'</li>';
+					ul_chatSnapshot.insertAdjacentHTML('beforeend', chatItemHtml);
+				}
+			}
+			
+			// 获取好友数据
+			function fetchContactList() {
+				var user = app.getUserGlobalInfo();
+				mui.ajax(app.serverUrl + '/u/queryMyFriends', {
+					data: {
+						userId: user.id
+					},
+					dataType: 'json',
+					type: 'post',
+					timeout: 10000,
+					header: {'Content-Type': 'application/x-www-form-urlencoded'},
+					success: function(data) {
+						
+						if (data.status == 200) {
+							var contactList = data.data;
+							app.setContactList(contactList);
+						}
+					}
+				});
 			}
 			
 			// 加载好友请求记录列表

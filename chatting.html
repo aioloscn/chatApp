@@ -1,4 +1,4 @@
-<!doctype html>
+<!documenttype html>
 <html>
 
 	<head>
@@ -46,7 +46,7 @@
 		<script src="js/app.js"></script>
 		<script type="text/javascript">
 			// 创建命名空间, 只需要把自己的代码写进去, 外部就无法访问
-			(function($, doc) {
+			// (function($, document) {
 				
 				// 获取上一个页面传入的值
 				var friendUserId;
@@ -69,14 +69,17 @@
 					friendNickname = chattingWebview.friendNickname;
 					friendFaceImage = chattingWebview.friendFaceImage;
 					
-					doc.getElementById('chatting-nickname').innerHTML = friendNickname;
+					document.getElementById('chatting-nickname').innerHTML = friendNickname;
+					
+					// 进入页面时初始化之前的聊天记录
+					initChatHistory();
 					
 					// 进入页面时将滚动条滑到最底端
 					resizeScreen();
 					
 					// 获取dom控件
-					var msg_text = doc.getElementById('msg-text');
-					var send = doc.getElementById('send');
+					var msg_text = document.getElementById('msg-text');
+					var send = document.getElementById('send');
 					
 					// 监听输入后改变按钮颜色
 					msg_text.addEventListener('input', function() {
@@ -91,7 +94,7 @@
 					// 对当前的窗口监听resize事件
 					window.addEventListener('resize', function() {
 						resizeScreen();
-						doc.getElementById('msg-outer').style.paddingBottom = '50px';
+						document.getElementById('msg-outer').style.paddingBottom = '50px';
 					});
 					
 					// 发送消息按钮的事件绑定
@@ -117,11 +120,16 @@
 						// 发送消息后改回发送按钮颜色
 						send.setAttribute('class', 'mui-btn-gray');
 						
+						var chatMsg = new app.ChatMsg(me.id, friendUserId, msg_text_val, null);
+						var dataContent = new app.DataContent(app.CHAT, chatMsg, null);
+						
 						// 调用websocket 发送消息到netty后端
 						var wsWebview = plus.webview.getWebviewById('chatlist.html');
-						wsWebview.evalJS('CHAT.chat("' + msg_text_val + '")');
+						wsWebview.evalJS('CHAT.chat("' + JSON.stringify(dataContent) + '")');
 						
-						receiveMsg('lsejfls');
+						// 保存聊天记录到本地缓存
+						app.saveUserChatHistory(me.id, friendUserId, msg_text_val, 1);
+						app.saveUserChatSnapshot(me.id, friendUserId, msg_text_val, true);
 					});
 				});
 				
@@ -136,7 +144,7 @@
 											'<p class="msg-left-white" style="margin-top: 5px;">' + msg + '</p>' +
 										'</div>' +
 									'</div>';
-					var msg_list = doc.getElementById('msg');
+					var msg_list = document.getElementById('msg');
 					msg_list.insertAdjacentHTML('beforeend', msgHtml);
 					
 					resizeScreen();
@@ -154,7 +162,7 @@
 											'<p class="msg-right-green" style="margin-top: 5px;">' + msg + '</p>' +
 										'</div>' +
 									'</div>';
-					var msg_list = doc.getElementById('msg');
+					var msg_list = document.getElementById('msg');
 					msg_list.insertAdjacentHTML('beforeend', msgHtml);
 				}
 				
@@ -166,11 +174,49 @@
 				
 				// 重新调整聊天窗口
 				function resizeScreen() {
-					var areaMsgList = doc.getElementById('msg');
+					var areaMsgList = document.getElementById('msg');
 					// 设置进入聊天界面时滚动条自动到最底端
 					areaMsgList.scrollTop = areaMsgList.scrollHeight + areaMsgList.offsetHeight;
 				}
-			} (mui, document));
+			// } (mui, documentument));
+			
+			// 初始化聊天记录
+			function initChatHistory() {
+				var msg_list = document.getElementById('msg');
+				var me = app.getUserGlobalInfo();
+				var myId = me.id;
+				var myFaceImage = me.faceImage;
+				
+				var chatHistoryList = app.getUserChatHistory(myId, friendUserId);
+				
+				var together = '';
+				
+				for (var i = 0; i < chatHistoryList.length; i ++) {
+					var singleMsg = chatHistoryList[i];
+					if (singleMsg != null && singleMsg.flag == 1) {
+						together += '<div class="me_lists">' +
+										'<div class="header_img">' +
+											'<img src="' + app.imgServerUrl + myFaceImage + '" width="45px" height="45px" />' +
+										'</div>' +
+										'<div class="msg-wrapper left">' +
+											'<p class="msg-right-green" style="margin-top: 5px;">' + singleMsg.msg + '</p>' +
+										'</div>' +
+									'</div>';
+					} else if (singleMsg != null && singleMsg.flag == 2) {
+						together += '<div class="friend_lists">' +
+										'<div class="header_img">' +
+											'<img src="' + app.imgServerUrl + friendFaceImage + '" width="45px" height="45px" />' +
+										'</div>' +
+										'<div class="msg-wrapper right">' +
+											'<p class="msg-left-white" style="margin-top: 5px;">' + singleMsg.msg + '</p>' +
+										'</div>' +
+									'</div>';
+					}
+				}
+				
+				msg_list.innerHTML = together;
+			}
+			
 		</script>
 	</body>
 

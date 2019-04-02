@@ -3,12 +3,12 @@ window.app = {
 	/**
 	 * 后端服务发布的url地址
 	 */
-	serverUrl: 'http://192.168.3.21:8080',
+	serverUrl: 'http://172.18.3.131:8080',
 	
 	/**
 	 * netty服务后端发布的url地址
 	 */
-	nettyServerUrl: 'ws://192.168.3.21:8088/ws',
+	nettyServerUrl: 'ws://172.18.3.131:8088/ws',
 	
 	/**
 	 * 图片服务器的url地址
@@ -71,5 +71,172 @@ window.app = {
 			return [];
 			
 		return JSON.parse(contactListStr);
+	},
+	
+	/**
+	 * 根据用户id，从本地缓存（联系人列表）中获取朋友的信息
+	 */
+	getFriendFormContactList: function(friendId) {
+		var contactListStr = plus.storage.getItem('contactList');
+		
+		if (this.isNotNull(contactListStr)) {
+			
+			var contactList = JSON.parse(contactListStr);
+			for (var i = 0; i < contactList.length; i ++) {
+				var friend = contactList[i];
+				if (friend.friendUserId == friendId) {
+					return friend;
+					break;
+				}
+			}
+		} else {
+			return null;
+		}
+	},
+	
+	/**
+	 * 保存聊天记录
+	 * @param {Object} flag 判断这条消息是谁发送的，1：我 2：好友
+	 */
+	saveUserChatHistory: function(myId, friendId, msg, flag) {
+		var me = this;
+		var chatKey = 'chat-' + myId + '-' + friendId;
+		
+		// 从本地缓存获取聊天记录查看是否存在
+		var chatHistoryListStr = plus.storage.getItem(chatKey);
+		
+		var chatHistoryList;
+		if (me.isNotNull(chatHistoryListStr)) {
+			chatHistoryList = JSON.parse(chatHistoryListStr);
+		} else {
+			chatHistoryList = [];
+		}
+		
+		// 向list中追加msg对象
+		var singleMsg = new me.ChatHistory(myId, friendId, msg, flag);
+		chatHistoryList.push(singleMsg);
+		
+		plus.storage.setItem(chatKey, JSON.stringify(chatHistoryList));
+	},
+	
+	/**
+	 * 从缓存中获取聊天记录
+	 */
+	getUserChatHistory: function(myId, friendId) {
+		var me = this;
+		var chatKey = 'chat-' + myId + '-' + friendId;
+		
+		// 从本地缓存获取聊天记录查看是否存在
+		var chatHistoryListStr = plus.storage.getItem(chatKey);
+		
+		var chatHistoryList;
+		if (me.isNotNull(chatHistoryListStr)) {
+			chatHistoryList = JSON.parse(chatHistoryListStr);
+		} else {
+			chatHistoryList = [];
+		}
+		
+		return chatHistoryList;
+	},
+	
+	/**
+	 * 聊天记录的快照，仅仅保存每次和好友聊天的最后一条消息
+	 */
+	saveUserChatSnapshot: function(myId, friendId, msg, isRead) {
+		var me = this;
+		var chatKey = 'chat-snapshot' + myId;
+		
+		// 从本地缓存获取聊天快照的list
+		var chatSnapshotListStr = plus.storage.getItem(chatKey);
+		
+		var chatSnapshotList;
+		if (me.isNotNull(chatSnapshotListStr)) {
+			
+			chatSnapshotList = jSON.parse(chatSnapshotListStr);
+			
+			// 循环快照list，并且判断每个元素是否匹配friendId，如果匹配则删除
+			for (var i = 0; i < chatSnapshotList.length; i ++) {
+				if (chatSnapshotList[i].friendId == friendId) {
+					// 删除已经存在的friendId所对应的快照对象
+					chatSnapshotList.splice(i, 1);
+					break;
+				}
+			}
+		} else {
+			chatSnapshotList = [];
+		}
+		
+		var singleMsg = new me.ChatSnapshot(myId, friendId, msg, isRead);
+		chatSnapshotList.unshift(singleMsg);
+		plus.storage.setItem(chatKey, JSON.stringify(chatSnapshotList));
+	},
+	
+	/**
+	 * 获取用户快照列表
+	 */
+	getUserChatSnapshot: function(myId) {
+		var me = this;
+		var chatKey = 'chat-snapshot' + myId;
+		
+		// 从本地缓存获取聊天快照的list
+		var chatSnapshotListStr = plus.storage.getItem(chatKey);
+		
+		var chatSnapshotList;
+		if (me.isNotNull(chatSnapshotListStr)) {
+			chatSnapshotList = jSON.parse(chatSnapshotListStr);
+		} else {
+			chatSnapshotList = [];
+		}
+		
+		return chatSnapshotList;
+	},
+	
+	/**
+	 * 后端消息的动作类型枚举
+	 */
+	CONNECT: 1, 	// 第一次(或重连)初始化连接
+    CHAT: 2, 		// 聊天消息
+    SIGNED: 3, 		// 消息签收
+    KEEPALIVE: 4,  	// 客户端保持心跳
+	PULL_FRIEND: 5,	// 重新拉取好友
+	
+	/**
+	 * 后端的聊天模型对象
+	 */
+	ChatMsg: function(senderId, receiverId, msg, msgId) {
+		this.senderId = senderId;
+		this.receiverId = receiverId;
+		this.msg = msg;
+		this.msgId = msgId;
+	},
+	
+	/**
+	 * 后端的消息模型对象
+	 */
+	DataContent: function(action, chatMsg, extend) {
+		this.action = action;
+		this.ChatMsg = chatMsg;
+		this.extend = extend;
+	},
+	
+	/**
+	 * 单个聊天对象构造函数
+	 */
+	ChatHistory: function(myId, friendId, msg, flag) {
+		this.myId = myId;
+		this.friendId = friendId;
+		this.msg = msg;
+		this.flag = flag;
+	},
+	
+	/**
+	 * 快照对象
+	 * @param {Object} isRead 判断是否已读
+	 */
+	ChatSnapshot: function(myId, friendId, msg, isRead) {
+		this.myId = myId;
+		this.friendId = friendId;
+		this.msg = msg;
+		this.isRead = isRead;
 	}
 }
