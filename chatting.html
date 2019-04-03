@@ -1,4 +1,4 @@
-<!documenttype html>
+<!doctype html>
 <html>
 
 	<head>
@@ -125,7 +125,7 @@
 						
 						// 调用websocket 发送消息到netty后端
 						var wsWebview = plus.webview.getWebviewById('chatlist.html');
-						wsWebview.evalJS('CHAT.chat("' + JSON.stringify(dataContent) + '")');
+						wsWebview.evalJS("CHAT.chat('" + JSON.stringify(dataContent) + "')");
 						
 						// 保存聊天记录到本地缓存
 						app.saveUserChatHistory(me.id, friendUserId, msg_text_val, 1);

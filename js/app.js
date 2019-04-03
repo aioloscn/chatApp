@@ -3,12 +3,12 @@ window.app = {
 	/**
 	 * 后端服务发布的url地址
 	 */
-	serverUrl: 'http://172.18.3.131:8080',
+	serverUrl: 'http://192.168.43.232:8080',
 	
 	/**
 	 * netty服务后端发布的url地址
 	 */
-	nettyServerUrl: 'ws://172.18.3.131:8088/ws',
+	nettyServerUrl: 'ws://192.168.43.232:8088/ws',
 	
 	/**
 	 * 图片服务器的url地址
@@ -140,6 +140,14 @@ window.app = {
 	},
 	
 	/**
+	 * 删除聊天记录
+	 */
+	deleteUserChatHistory: function(myId, friendId) {
+		var chatKey = 'chat-' + myId + '-' + friendId;
+		plus.storage.removeItem(chatKey);
+	},
+	
+	/**
 	 * 聊天记录的快照，仅仅保存每次和好友聊天的最后一条消息
 	 */
 	saveUserChatSnapshot: function(myId, friendId, msg, isRead) {
@@ -167,6 +175,7 @@ window.app = {
 		}
 		
 		var singleMsg = new me.ChatSnapshot(myId, friendId, msg, isRead);
+		// 在list头部插入对象，保证最新聊天信息渲染时在顶部
 		chatSnapshotList.unshift(singleMsg);
 		plus.storage.setItem(chatKey, JSON.stringify(chatSnapshotList));
 	},
@@ -183,12 +192,71 @@ window.app = {
 		
 		var chatSnapshotList;
 		if (me.isNotNull(chatSnapshotListStr)) {
-			chatSnapshotList = jSON.parse(chatSnapshotListStr);
+			chatSnapshotList = JSON.parse(chatSnapshotListStr);
 		} else {
 			chatSnapshotList = [];
 		}
 		
 		return chatSnapshotList;
+	},
+	
+	/**
+	 * 删除本地快照
+	 */
+	deleteUserChatSnapshot: function(myId, friendId) {
+		var me = this;
+		var chatKey = 'chat-snapshot' + myId;
+		
+		// 从本地缓存获取聊天快照的list
+		var chatSnapshotListStr = plus.storage.getItem(chatKey);
+		
+		var chatSnapshotList;
+		if (me.isNotNull(chatSnapshotListStr)) {
+			
+			chatSnapshotList = jSON.parse(chatSnapshotListStr);
+			
+			// 循环快照list，并且判断每个元素是否匹配friendId，如果匹配则删除
+			for (var i = 0; i < chatSnapshotList.length; i ++) {
+				if (chatSnapshotList[i].friendId == friendId) {
+					// 删除已经存在的friendId所对应的快照对象
+					chatSnapshotList.splice(i, 1);
+					break;
+				}
+			}
+		} else {
+			return;
+		}
+		
+		plus.storage.setItem(chatKey, JSON.stringify(chatSnapshotList));
+	},
+	
+	/**
+	 * 标记未读消息为已读状态
+	 */
+	readUserChatSnapshot: function(myId, friendId) {
+		var me = this;
+		var chatKey = 'chat-snapshot' + myId;
+		
+		// 从本地缓存获取聊天快照的list
+		var chatSnapshotListStr = plus.storage.getItem(chatKey);
+		
+		var chatSnapshotList;
+		if (me.isNotNull(chatSnapshotListStr)) {
+			chatSnapshotList = jSON.parse(chatSnapshotListStr);
+			// 循环list，匹配friendId，把匹配到的删掉重新放入一个已读的快照对象
+			for (var i = 0; i < chatSnapshotList.length; i ++) {
+				var item = chatSnapshotList[i];
+				if (item.friendId == friendId) {
+					item.isRead = true;	// 标记为已读
+					chatSnapshotList.slice(i, 1, item);	// 替换原有快照
+					break;
+				}
+			}
+			// 替换原有的快照列表
+			plus.storage.setItem(chatKey, JSON.stringify(chatSnapshotList));
+		} else {
+			return;
+		}
 	},
 	
 	/**

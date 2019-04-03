@@ -6,6 +6,32 @@
 		<title></title>
 		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
 		<link href="css/mui.css" rel="stylesheet" />
+		<style>
+			html,
+			body {
+				height: 100%;
+			}
+			
+			.mui-content {
+				height: 100%;
+				overflow: auto;
+			}
+			
+			.red-point {
+	          position: relative;
+	        }
+	
+	        .red-point::before{
+	          content: " ";
+	          border: 5px solid #C9394A;	/*设置红色*/
+	          border-radius: 5px;	/*设置圆角*/
+	          position: absolute;
+	          z-index: 3000;
+	          right: 0%;
+	          margin-right: -10px;
+	          margin-top: 0px;
+	        }
+		</style>
 	</head>
 
 	<body>
@@ -39,7 +65,42 @@
 					CHAT.init();
 				});
 				
-				// CHAT.init();
+				// 为快照批量绑定点击事件
+				mui('#ul_chatSnapshot').on('tap', '.chat-with-friend', function() {
+					var friendUserId = this.getAttribute('friendUserId');
+					var friendNickname = this.getAttribute('friendNickname');
+					var friendFaceImage = this.getAttribute('friendFaceImage');
+					
+					// 打开聊天子页面
+					mui.openWindow({
+						url: 'chatting.html',
+						id: 'chatting-' + friendUserId,
+						extras: {
+							friendUserId: friendUserId,
+							friendNickname: friendNickname,
+							friendFaceImage: friendFaceImage
+						}
+					});
+					
+					// 标记未读状态为已读
+					readUserChatSnapshot(user.id, friendUserId);
+					// 渲染快照列表进行展示
+					loadingChatSnapshot();
+				});
+				
+				// 左滑删除快照和聊天记录
+				mui('#ulchatSnapshot').on('tap', '#link_delChatRecord', function(e) {
+					var me = this;
+					var friendUserId = me.getAttribute('friendUserIds');
+					// 删除本地聊天记录
+					deleteUserChatHistory(user.id, friendUserId);
+					// 删除本地快照
+					deleteUserChatSnapshot(user.id, friendUserId);
+					// 移除对应的dom节点
+					var li = me.parentNode.parentNode;
+					var ul_chatSnapshot = document.getElementById('ul_chatSnapshot');
+					ul_chatSnapshot.removeChild(li);
+				});
 			});
 			
 			// 构建聊天业务CHAT
@@ -71,14 +132,14 @@
 					} else {
 						// 重连websocket
 						CHAT.init();
-						setTimeout('CHAT.reChat(' + msg + ')', '1000');
+						setTimeout("CHAT.reChat('" + msg + "')", "1000");
 					}
 					
 					// 渲染快照列表进行展示
 					loadingChatSnapshot();
 				},
 				reChat: function(msg) {
-					console,log('重新发送消息...');
+					console.log('重新发送消息...');
 					CHAT.socket.send(msg);
 				},
 				wsopen: function() {
@@ -90,6 +151,12 @@
 					var dataContent = new app.DataContent(app.CONNECT, chatMsg, null);
 					
 					CHAT.chat(JSON.stringify(dataContent));
+
+					// 每次连接后获取用户未签收的消息
+					fetchUnReadMsg();
+					
+					// 定时发送心跳包
+					setInterval("CHAT.keepalive()", 10000);
 				},
 				wsmessage: function(e) {
 					console.log('接收到消息，消息为：' + e.data);
@@ -104,7 +171,7 @@
 					}
 					
 					// 正常接收消息
-					var chatMsg = JSON.parse(e.data);
+					var chatMsg = dataContent;
 					var msg = chatMsg.msg;
 					var myId = chatMsg.receiverId;
 					var friendUserId = chatMsg.senderId;
@@ -113,7 +180,7 @@
 					var chatWebview = plus.webview.getWebviewById('chatting-' + friendUserId);
 					var isRead = true;	// 设置消息的默认状态为已读
 					if (chatWebview != null) {
-						chatWebview.evalJS('receiveMsg("' + msg + '")');
+						chatWebview.evalJS("receiveMsg('" + msg + "')");
 					} else {
 						isRead = false;
 					}
@@ -133,7 +200,63 @@
 				},
 				wserror: function() {
 					console.log('发生错误...');
+				},
+				signMsgList: function(unSignedMsgIds) {
+					// 构建批量签收对象的模型
+					var dataContentSign = new app.DataContent(app.SIGNED, null, unSignedMsgIds);
+					// 发送批量签收的请求
+					CHAT.chat(JSON.stringify(dataContentSign));
+				},
+				keepalive: function() {
+					// 保持心跳
+					var dataContent = new app.DataContent(app.KEEPALIVE, null, null);
+					CHAT.chat(JSON.stringify(dataContent));
+					
+					// 定时获取最新数据
+					fetchUnReadMsg();
+					fetchContactList();
 				}
+			}
+			
+			// 重连后获取服务器的未签收消息
+			function fetchUnReadMsg() {
+				var user = app.getUserGlobalInfo();
+				var msgIds = ',';
+				
+				mui.ajax(app.serverUrl + '/u/getUnReadMsgList', {
+					data: {
+						acceptUserId: user.id
+					},
+					dataType: 'json',
+					type: 'post',
+					timeout: 10000,
+					header: {'Content-Type': 'application/x-www-form-urlencoded'},
+					success: function(data) {
+						
+						if (data.status == 200) {
+							var unReadMsgList = data.data;
+							
+							// 1. 保存聊天记录到本地
+							// 2. 保存聊天快照到本地
+							// 3. 对未签收的消息批量签收
+							for (var i = 0; i < unReadMsgList.length; i ++) {
+								var msgObj = unReadMsgList[i];
+								app.saveUserChatHistory(msgObj.acceptUserId, msgObj.sendUserId, msgObj.msg, 2);
+								app.saveUserChatSnapshot(msgObj.acceptUserId, msgObj.sendUserId, msgObj.msg, false);
+								// 拼接批量接收的消息的id字符串
+								msgIds += msgObj.id;
+								msgIds += ',';
+							}
+							// 调用批量签收的方法
+							CHAT.signMsgList(msgIds);
+							// 刷新聊天快照
+							loadingChatSnapshot();
+						}
+					},
+					error: function(xhr, type, errorThrown) {
+						console.log(errorThrown);
+					}
+				});
 			}
 			
 			// 展示聊天快照, 渲染列表
@@ -151,11 +274,30 @@
 					
 					// 根据friendId从本地联系人列表的缓存中拿到相关信息
 					var friend = app.getFriendFormContactList(friendId);
+					var friendNickname = '';
+					var friendFaceImage = '';
 					
-					chatItemHtml = '<li class="mui-table-view-cell mui-media">' +
-										'<div class="mui-media-body">' +
-											'<img class="mui-media-object mui-pull-left" src="' + app.imgServerUrl + friend.friendFaceImage + '"/>' +
-												friend.friendNickname
+					if (friend != null) {
+						friendNickname = friend.friendFaceImage;
+						friendFaceImage = friend.friendFaceImage;
+					}
+					
+					// 判断消息的已读或未读状态
+					var isRead = chatItem.isRead;
+					var readHtmlBefore = '';
+					var readHtmlAfter = '';
+					if (!isRead) {
+						readHtmlBefore = '<span class="red-point">';
+						readHtmlAfter = '</span>';
+					}
+					
+					chatItemHtml = '<li friendUserId="' + friendId + '" friendNickname="' + friendNickname + '" friendFaceImage="' + friendFaceImage + '" class="chat-with-friend mui-table-view-cell mui-media">' +
+										'<div class="mui-slider-right mui-disabled">' +
+											'<a id="link_delChatRecord" friendUserId="' + friendId + '" class="mui-btn mui-btn-red">删除</a>' +
+										'</div>' +
+										'<div class="mui-slider-handle mui-media-body">' +
+											'<img class="mui-media-object mui-pull-left" src="' + app.imgServerUrl + friendFaceImage + '"/>' +
+												readHtmlBefore + friendNickname + readHtmlAfter +
 											'<p class="mui-ellipsis">' + chatItem.msg + '</p>' +
 										'</div>' +
 									'</li>';
