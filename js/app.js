@@ -3,12 +3,12 @@ window.app = {
 	/**
 	 * 后端服务发布的url地址
 	 */
-	serverUrl: 'http://172.18.3.11:8080',
+	serverUrl: 'http://172.18.1.56:8080',
 	
 	/**
 	 * netty服务后端发布的url地址
 	 */
-	nettyServerUrl: 'ws://172.18.3.11:8088/ws',
+	nettyServerUrl: 'ws://172.18.1.56:8088/ws',
 	
 	/**
 	 * 图片服务器的url地址
@@ -283,7 +283,7 @@ window.app = {
 	 */
 	DataContent: function(action, chatMsg, extend) {
 		this.action = action;
-		this.ChatMsg = chatMsg;
+		this.chatMsg = chatMsg;
 		this.extend = extend;
 	},
 	

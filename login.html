@@ -84,6 +84,10 @@
 		
 		mui.plusReady(function() {
 			
+			mui.back = function() {
+				plus.runtime.quit();
+			}
+			
 			// 判断用户是否注册登录过，如果本地内存有全局的用户对象，此时直接跳转到首页
 			var userInfo = app.getUserGlobalInfo();
 			if (userInfo != null) {

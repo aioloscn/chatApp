@@ -19,7 +19,7 @@
 				socket: null,
 				init: function() {
 					if (window.WebSocket) {
-						CHAT.socket = new WebSocket("ws://172.18.3.11:8088/ws");
+						CHAT.socket = new WebSocket("ws://172.18.1.56:8088/ws");
 						CHAT.socket.onopen = function() {
 							console.log("连接建立成功...");
 						},
@@ -41,7 +41,8 @@
 				},
 				chat: function() {
 					var msg = document.getElementById("msgContent");
-					CHAT.socket.send(msg.value);
+					var dataContent = new app.DataContent(app.CONNECT, null, null);
+					CHAT.socket.send(dataContent);
 				}
 			};
 			
