@@ -3,12 +3,12 @@ window.app = {
 	/**
 	 * 后端服务发布的url地址
 	 */
-	serverUrl: 'http://172.18.1.56:8080',
+	serverUrl: 'http://188.131.240.181:8080',
 	
 	/**
 	 * netty服务后端发布的url地址
 	 */
-	nettyServerUrl: 'ws://172.18.1.56:8088/ws',
+	nettyServerUrl: 'ws://188.131.240.181:8088/ws',
 	
 	/**
 	 * 图片服务器的url地址
@@ -58,6 +58,7 @@ window.app = {
 	 */
 	setContactList: function(contactList) {
 		var contactListStr = JSON.stringify(contactList);
+
 		plus.storage.setItem('contactList', contactListStr);
 	},
 	
@@ -160,7 +161,7 @@ window.app = {
 		var chatSnapshotList;
 		if (me.isNotNull(chatSnapshotListStr)) {
 			
-			chatSnapshotList = jSON.parse(chatSnapshotListStr);
+			chatSnapshotList = JSON.parse(chatSnapshotListStr);
 			
 			// 循环快照list，并且判断每个元素是否匹配friendId，如果匹配则删除
 			for (var i = 0; i < chatSnapshotList.length; i ++) {
@@ -213,7 +214,7 @@ window.app = {
 		var chatSnapshotList;
 		if (me.isNotNull(chatSnapshotListStr)) {
 			
-			chatSnapshotList = jSON.parse(chatSnapshotListStr);
+			chatSnapshotList = JSON.parse(chatSnapshotListStr);
 			
 			// 循环快照list，并且判断每个元素是否匹配friendId，如果匹配则删除
 			for (var i = 0; i < chatSnapshotList.length; i ++) {
@@ -242,7 +243,7 @@ window.app = {
 		
 		var chatSnapshotList;
 		if (me.isNotNull(chatSnapshotListStr)) {
-			chatSnapshotList = jSON.parse(chatSnapshotListStr);
+			chatSnapshotList = JSON.parse(chatSnapshotListStr);
 			// 循环list，匹配friendId，把匹配到的删掉重新放入一个已读的快照对象
 			for (var i = 0; i < chatSnapshotList.length; i ++) {
 				var item = chatSnapshotList[i];

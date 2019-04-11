@@ -82,20 +82,22 @@
 						}
 					});
 					
+					var me = app.getUserGlobalInfo();
+					
 					// 标记未读状态为已读
-					readUserChatSnapshot(user.id, friendUserId);
+					app.readUserChatSnapshot(me.id, friendUserId);
 					// 渲染快照列表进行展示
 					loadingChatSnapshot();
 				});
 				
 				// 左滑删除快照和聊天记录
-				mui('#ulchatSnapshot').on('tap', '#link_delChatRecord', function(e) {
+				mui('#ul_chatSnapshot').on('tap', '#link_delChatRecord', function(e) {
 					var me = this;
 					var friendUserId = me.getAttribute('friendUserIds');
 					// 删除本地聊天记录
-					deleteUserChatHistory(user.id, friendUserId);
+					app.deleteUserChatHistory(user.id, friendUserId);
 					// 删除本地快照
-					deleteUserChatSnapshot(user.id, friendUserId);
+					app.deleteUserChatSnapshot(user.id, friendUserId);
 					// 移除对应的dom节点
 					var li = me.parentNode.parentNode;
 					var ul_chatSnapshot = document.getElementById('ul_chatSnapshot');
@@ -171,7 +173,7 @@
 					}
 					
 					// 正常接收消息
-					var chatMsg = dataContent;
+					var chatMsg = dataContent.chatMsg;
 					var msg = chatMsg.msg;
 					var myId = chatMsg.receiverId;
 					var friendUserId = chatMsg.senderId;
@@ -274,11 +276,12 @@
 					
 					// 根据friendId从本地联系人列表的缓存中拿到相关信息
 					var friend = app.getFriendFormContactList(friendId);
+					
 					var friendNickname = '';
 					var friendFaceImage = '';
 					
 					if (friend != null) {
-						friendNickname = friend.friendFaceImage;
+						friendNickname = friend.friendNickname;
 						friendFaceImage = friend.friendFaceImage;
 					}
 					
